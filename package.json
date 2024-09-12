@@ -11,6 +11,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "examples": "^0.1.0",
     "three": "^0.168.0",
     "three-viewport-gizmo": "^0.1.5"
   },
