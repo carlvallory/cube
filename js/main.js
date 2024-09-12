@@ -2,10 +2,12 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { FontLoader } from 'three/examples/jsm/loaders/FontLoader.js';
 import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry.js';
+import { MTLLoader } from 'three/examples/jsm/loaders/MTLLoader.js';
+import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
 
 // Escena
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(0xfefefe);  // Fondo blanco
+const sceneOne = new THREE.Scene();
+sceneOne.background = new THREE.Color(0xfefefe);  // Fondo blanco
 
 // Cámara
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -45,7 +47,7 @@ const cubeMaterial = new THREE.MeshPhysicalMaterial({
     side: THREE.DoubleSide // Para que las caras interiores reflejen
 });
 const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
-scene.add(cube);
+sceneOne.add(cube);
 
 // Crear una esfera azul dentro del cubo
 const sphereGeometry = new THREE.SphereGeometry(1.5, 32, 32);
@@ -56,8 +58,9 @@ sphere.position.set(0, 0, 0); // Posicionar la esfera en el centro del cubo
 cube.add(sphere);
 
 // Cargar la fuente
-const loader = new FontLoader();
-loader.load('fonts/roboto/Roboto_Regular.typeface.json', function (font) {
+let textMesh;  // Declara textMesh para usarlo globalmente
+const fontLoader = new FontLoader();
+fontLoader.load('fonts/roboto/Roboto_Regular.typeface.json', function (font) {
 
     // Crear la geometría de texto
     const textGeometry = new TextGeometry('Start', {
@@ -74,7 +77,7 @@ loader.load('fonts/roboto/Roboto_Regular.typeface.json', function (font) {
 
     // Material para el texto
     const textMaterial = new THREE.MeshPhongMaterial({ color: 0x000000, specular: 0xffffff, shininess: 100 });
-    const textMesh = new THREE.Mesh(textGeometry, textMaterial);
+    textMesh = new THREE.Mesh(textGeometry, textMaterial);
 
     // Posicionar el texto en la cara frontal del cubo
     textMesh.position.set(-0.4, -0.5, 2);  // Ajusta las coordenadas según el tamaño del cubo
@@ -86,16 +89,16 @@ loader.load('fonts/roboto/Roboto_Regular.typeface.json', function (font) {
 // const wallMaterial = new THREE.MeshBasicMaterial( { map: wallTexture } );
 // const wall = new THREE.Mesh(wallGeometry, wallMaterial);
 // wall.position.set(0, 0, 10); // Posicionar la esfera en el centro del cubo
-// scene.add(wall);
+// sceneOne.add(wall);
 
 
 // Iluminación
 const ambientLight = new THREE.AmbientLight(0xfefefe, 0.5);  // Luz ambiental
-scene.add(ambientLight);
+sceneOne.add(ambientLight);
 
 const pointLight = new THREE.PointLight(0xfefefe, 1);
 pointLight.position.set(5, 5, 5);
-scene.add(pointLight);
+sceneOne.add(pointLight);
 
 // Controles de la cámara
 const controls = new OrbitControls(camera, renderer.domElement);
@@ -131,11 +134,60 @@ const targetRotationZ = 0;
 const originalRotation = new THREE.Euler(0, 0, 0);
 const targetRotation = new THREE.Euler(targetRotationX, targetRotationY, targetRotationZ); // Rotar para que el vértice inferior izquierdo apunte al frente
 
+
+// ESCENA DOS
+const sceneTwo = new THREE.Scene();
+sceneTwo.background = new THREE.Color(0xfefefe);
+
+const directionalLightTwo = new THREE.DirectionalLight(0xffffff, 1);
+directionalLightTwo.position.set(10, 10, 10);
+sceneTwo.add(directionalLightTwo);
+
+
+const mtlLoader = new MTLLoader();
+mtlLoader.load(
+    'models/city/obj/castelia_city.mtl',  // Cambia esto por la ruta correcta a tu archivo .MTL
+    function (materials) {
+        materials.preload(); // Preprocesar los materiales
+
+        // Ahora, usar OBJLoader para cargar el OBJ con los materiales aplicados
+        const objLoader = new OBJLoader();
+        objLoader.setMaterials(materials); // Aplicar los materiales cargados
+        objLoader.load(
+            'models/city/obj/castelia_city.obj',  // Cambia esto por la ruta correcta a tu archivo .OBJ
+            function (object) {
+                object.position.set(0, -1, -2); // Ajustar la posición si es necesario
+                object.scale.set(0.0001, 0.0001, 0.0001); // Ajusta la escala para que encaje bien en la escena
+                sceneTwo.add(object);
+            },
+            function (xhr) {
+                console.log((xhr.loaded / xhr.total * 100) + '% cargado');
+            },
+            function (error) {
+                console.error('Error al cargar el modelo OBJ', error);
+            }
+        );
+    },
+    function (xhr) {
+        console.log((xhr.loaded / xhr.total * 100) + '% cargado');
+    },
+    function (error) {
+        console.error('Error al cargar los materiales MTL', error);
+    }
+);
+
+// Variables para la transición
+let currentScene = sceneOne;  // Inicialmente mostrar sceneOne
+let transitionActive = false;
+let transitionProgress = 0;
+
 // Función de easing para suavizar la transición
 function easeInOut(t) {
     return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
 }
 
+
+// MOUSE ACTION
 let isMouseOverCube = false;
 
 // Evento de mousemove para detectar la posición del mouse
@@ -148,13 +200,31 @@ function onMouseMove(event) {
 // Agregar el evento de mousemove
 window.addEventListener('mousemove', onMouseMove, false);
 
+// Detectar el clic en el texto 'Start'
+window.addEventListener('click', (event) => {
+    // Convertir las coordenadas del mouse a coordenadas normalizadas (-1 a 1)
+    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+    // Usar el raycaster para detectar la intersección con el texto en la sceneOne
+    raycaster.setFromCamera(mouse, camera);
+    const intersects = raycaster.intersectObject(textMesh);  // Asegúrate de referenciar correctamente el 'textMesh'
+
+    if (intersects.length > 0 && currentScene === sceneOne) {
+        // Si el texto 'Start' es clicado en la sceneOne, iniciar la transición a sceneTwo
+        transitionActive = true;
+        transitionProgress = 0; // Reiniciar el progreso de la transición
+    }
+});
+
+
 // Animación
 function animate() {
     requestAnimationFrame(animate);
 
     // Actualizar la cámara cúbica para las reflexiones dinámicas
     //cube.visible = false;  // Oculta temporalmente el cubo para evitar reflejarse a sí mismo
-    cubeCamera.update(renderer, scene);  // Actualiza el entorno de reflexión
+    cubeCamera.update(renderer, sceneOne);  // Actualiza el entorno de reflexión
     //cube.visible = true;
 
     // Actualizar el raycaster con la posición del mouse
@@ -198,13 +268,49 @@ function animate() {
     // Rotación del mundo (esfera)
     sphere.rotation.y += 0.01;
 
-    // Actualizar los controles y renderizar la escena
+    // Si la transición está activa, ejecutar la animación de la transición
+    if (transitionActive) {
+        transitionProgress += 0.01;  // Ajustar la velocidad de la transición
+
+        // Efecto de desvanecimiento (fade out)
+        renderer.domElement.style.opacity = 1 - transitionProgress;
+
+        // Cuando la transición esté completa, cambiar de escena
+        if (transitionProgress >= 1) {
+            transitionActive = false;
+            loadNewScene();
+        }
+    }
+
+    
     controls.update();
-    renderer.render(scene, camera);
+    renderer.render(currentScene, camera);
+    
 }
 
-// Iniciar la animación
-animate();
+
+// Función para cargar la nueva escena
+function loadNewScene() {
+    // Cambiar la escena actual por sceneTwo si estamos en sceneOne
+    if (currentScene === sceneOne) {
+        currentScene = sceneTwo;
+    } else {
+        currentScene = sceneOne;
+    }
+
+    // Reiniciar el efecto de fade in (desvanecer la nueva escena)
+    renderer.domElement.style.opacity = 0;
+    let fadeInProgress = 0;
+    function fadeIn() {
+        fadeInProgress += 0.01;
+        renderer.domElement.style.opacity = fadeInProgress;
+
+        if (fadeInProgress < 1) {
+            requestAnimationFrame(fadeIn);
+        }
+    }
+    fadeIn();
+}
 
 // Ajuste de la ventana
 window.addEventListener('resize', () => {
@@ -212,3 +318,6 @@ window.addEventListener('resize', () => {
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
 });
+
+// Iniciar la animación
+animate();
