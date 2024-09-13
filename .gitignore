@@ -1,5 +1,5 @@
 /node_modules
-/models
+
 .env
 docker-compose.override.yml
 Homestead.json
