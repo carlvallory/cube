@@ -201,10 +201,10 @@ sceneTwo.add(directionalLightTwo);
 // Cargar el archivo FBX
 const fbxLoader = new FBXLoader(loadingManager);
 fbxLoader.load(
-    'models/room/room_by_deline.fbx',  // Cambia esto por la ruta correcta a tu archivo .FBX
+    'models/futuristic/fbx/futuristic_city.fbx',  // Cambia esto por la ruta correcta a tu archivo .FBX
     function (object) {
-        object.position.set(0, 0, 0);  // Ajustar la posición si es necesario
-        object.scale.set(2, 2, 2);  // Ajustar la escala según lo necesites
+        object.position.set(3, 0, -8);  // Ajustar la posición si es necesario
+        object.scale.set(0.001, 0.001, 0.001);  // Ajustar la escala según lo necesites
         sceneTwo.add(object);  // Añadir el modelo a la escena
 
         // Si el modelo tiene animaciones, puedes acceder a ellas aquí
@@ -232,6 +232,11 @@ let transitionProgress = 0;
 const controls = new OrbitControls(currentCamera, renderer.domElement);
 controls.enableDamping = true;  // Suaviza el movimiento
 controls.dampingFactor = 0.1;
+
+let cameraAnimationActive = false;
+let cameraStartPosition = new THREE.Vector3();
+let cameraEndPosition = new THREE.Vector3();
+let cameraAnimationProgress = 0;
 
 // Función de easing para suavizar la transición
 function easeInOut(t) {
@@ -266,6 +271,14 @@ window.addEventListener('click', (event) => {
         // Si el texto 'Start' es clicado en la sceneOne, iniciar la transición a sceneTwo
         transitionActive = true;
         transitionProgress = 0; // Reiniciar el progreso de la transición
+        
+        // Iniciar la animación de la cámara
+        cameraAnimationActive = true;
+        cameraAnimationProgress = 0;
+        cameraStartPosition.copy(currentCamera.position);
+        cameraEndPosition.copy(cube.position);
+        cameraEndPosition.z += 2; // Ajustar para detenerse justo delante del cubo
+    
     }
 });
 
@@ -318,12 +331,44 @@ function animate() {
 
         // Rotación de la esfera
         sphere.rotation.y += 0.01;
+
+        
+        // Animación de la cámara hacia adelante
+        if (cameraAnimationActive) {
+            // *** Modificación ***
+            // Rotar el cubo continuamente alrededor del eje Y
+            cube.rotation.y += 0.1; // Ajusta la velocidad de rotación según tus preferencias
+
+            cameraAnimationProgress += 0.02; // Ajustar la velocidad de la animación
+
+            // Interpolación suave de la posición de la cámara
+            currentCamera.position.lerpVectors(
+                cameraStartPosition,
+                cameraEndPosition,
+                cameraAnimationProgress
+            );
+
+            // Efecto de desvanecimiento sincronizado con el movimiento de la cámara
+            renderer.domElement.style.opacity = 1 - cameraAnimationProgress;
+
+            // Actualizar el objetivo de los controles para mantener el enfoque en el cubo
+            controls.target.lerp(cube.position, 0.1);
+
+            // Cuando la animación esté completa, iniciar la transición
+            if (cameraAnimationProgress >= 1) {
+                cameraAnimationActive = false;
+                // Iniciar la transición de escena
+                transitionActive = true;
+                transitionProgress = 0;
+            }
+        }
     }
 
     // Si la transición está activa, ejecutar la animación de la transición
     if (transitionActive) {
         transitionProgress += 0.02; // Ajustar la velocidad de la transición
 
+        // Aquí podrías agregar efectos adicionales durante la transición
         // Efecto de desvanecimiento (fade out)
         renderer.domElement.style.opacity = 1 - transitionProgress;
 
@@ -352,16 +397,37 @@ function switchCamera() {
     controls = new OrbitControls(currentCamera, renderer.domElement);  // Crear nuevos controles para la cámara actual
 }
 
+function moveCamera(currentScene)
+{
+    if(currentScene === sceneOne) {
+    
+    } else {
+        cameraOne.position.x = 2;
+        cameraOne.position.z = 30;
+        cameraOne.position.y = 15;
+        
+    }
+
+}
+
+function endingSceneOne() {
+
+}
+
 // Función para cargar la nueva escena
 function loadNewScene() {
     // Cambiar la escena actual por sceneTwo si estamos en sceneOne
     if (currentScene === sceneOne) {
         currentScene = sceneTwo;
-        switchCamera();
+        moveCamera();
+        //switchCamera();
     } else {
         currentCamera = cameraOne;  // Inicialmente usamos camera1
         currentScene = sceneOne;
-        switchCamera();
+    }
+
+    if (currentScene === sceneOne) {
+        currentCamera.position.copy(cameraStartPosition);
     }
 
     // Reiniciar el efecto de fade in (desvanecer la nueva escena)
