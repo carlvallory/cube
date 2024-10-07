@@ -5,6 +5,7 @@ import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry.js';
 import { MTLLoader } from 'three/examples/jsm/loaders/MTLLoader.js';
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 // Crear el LoadingManager
 const loadingManager = new THREE.LoadingManager();
@@ -67,6 +68,24 @@ const cubeMaterial = new THREE.MeshPhysicalMaterial({
     sheenColor: new THREE.Color(0xff0000), // Efecto prismático con un color inicial
     side: THREE.DoubleSide // Para que las caras interiores reflejen
 });
+
+const crystalSideMaterial = new THREE.MeshPhysicalMaterial({
+    envMap: cubeRenderTarget.texture, 
+    envMapIntensity: 1,
+    metalness: 0.2,  
+    roughness: 0.1,
+    transmission: 0.9, // Add transparency
+    thickness: -1, // Add refraction
+    reflectivity: 1,
+    refractionRatio: 0.98, // Efecto de refracción
+    ior: 1.3,
+    sheen: 1, // Simular efectos de dispersión de luz
+    sheenColor: new THREE.Color(0x0000ff), // Efecto prismático con un color inicial
+    side: THREE.DoubleSide,
+    lightMapIntensity: 1,
+
+});
+
 const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
 sceneOne.add(cube);
 
@@ -199,26 +218,52 @@ sceneTwo.add(directionalLightTwo);
 // );
 
 // Cargar el archivo FBX
-const fbxLoader = new FBXLoader(loadingManager);
-fbxLoader.load(
-    'models/futuristic/fbx/futuristic_city.fbx',  // Cambia esto por la ruta correcta a tu archivo .FBX
-    function (object) {
-        object.position.set(3, 0, -8);  // Ajustar la posición si es necesario
-        object.scale.set(0.001, 0.001, 0.001);  // Ajustar la escala según lo necesites
-        sceneTwo.add(object);  // Añadir el modelo a la escena
+// const fbxLoader = new FBXLoader(loadingManager);
+// fbxLoader.load(
+//     'models/futuristic/fbx/futuristic_city.fbx',  // Cambia esto por la ruta correcta a tu archivo .FBX
+//     function (object) {
+//         object.position.set(3, 0, -8);  // Ajustar la posición si es necesario
+//         object.scale.set(0.001, 0.001, 0.001);  // Ajustar la escala según lo necesites
+//         sceneTwo.add(object);  // Añadir el modelo a la escena
 
-        // Si el modelo tiene animaciones, puedes acceder a ellas aquí
-        if (object.animations && object.animations.length > 0) {
-            const mixer = new THREE.AnimationMixer(object);
-            const action = mixer.clipAction(object.animations[0]);
-            action.play();  // Iniciar la animación si es necesario
-        }
+//         // Si el modelo tiene animaciones, puedes acceder a ellas aquí
+//         if (object.animations && object.animations.length > 0) {
+//             const mixer = new THREE.AnimationMixer(object);
+//             const action = mixer.clipAction(object.animations[0]);
+//             action.play();  // Iniciar la animación si es necesario
+//         }
+//     },
+//     function (xhr) {
+//         console.log((xhr.loaded / xhr.total * 100) + '% cargado');
+//     },
+//     function (error) {
+//         console.error('Error al cargar el modelo FBX', error);
+//     }
+// );
+
+// Crear el cargador GLTF
+const gltfLoader = new GLTFLoader();
+
+// Cargar el archivo GLTF desde la subcarpeta 'models'
+gltfLoader.load(
+    'models/sea/scene.gltf',  // Ruta a tu archivo scene.gltf
+    function (gltf) {
+        // El modelo cargado está en gltf.scene
+        const model = gltf.scene;
+        
+        // Ajustar la posición, escala o rotación si es necesario
+        model.position.set(0, 0, -3);
+        model.scale.set(0.01, 0.01, 0.01);
+
+        // Añadir el modelo a la escena
+        scene.add(model);
     },
     function (xhr) {
+        // Progreso de la carga
         console.log((xhr.loaded / xhr.total * 100) + '% cargado');
     },
     function (error) {
-        console.error('Error al cargar el modelo FBX', error);
+        console.error('Error al cargar el modelo GLTF', error);
     }
 );
 
