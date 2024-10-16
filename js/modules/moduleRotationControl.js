@@ -11,10 +11,14 @@
  * @param {THREE.Euler} targetRotation - La rotación objetivo.
  * @param {number} lerpFactor - La suavidad de la interpolación.
  */
-function smoothRotation(object, targetRotation, lerpFactor = 0.1) {
-    object.rotation.x += (targetRotation.x - object.rotation.x) * lerpFactor;
-    object.rotation.y += (targetRotation.y - object.rotation.y) * lerpFactor;
-    object.rotation.z += (targetRotation.z - object.rotation.z) * lerpFactor;
+function smoothRotation(object, targetRotation, lerpFactor = 0.1, axis = false) {
+    if (!axis) {
+        object.rotation.x += (targetRotation.x - object.rotation.x) * lerpFactor;
+        object.rotation.y += (targetRotation.y - object.rotation.y) * lerpFactor;
+        object.rotation.z += (targetRotation.z - object.rotation.z) * lerpFactor;
+    } else {
+        object.rotation[axis] += (targetRotation[axis] - object.rotation[axis]) * lerpFactor;
+    }
 }
 
 export { smoothRotation };
