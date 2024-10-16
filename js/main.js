@@ -313,7 +313,7 @@ function animate() {
 
     if(isOverCube) {
         // Smoothly interpolate the cube's Y-axis rotation to the target rotation
-        cube.rotation.y += (targetRotationY - cube.rotation.y) * lerpFactor;
+        smoothRotation(cube,targetRotationY, lerpFactor, 'y');
     }
 
     // Actualizar controles
