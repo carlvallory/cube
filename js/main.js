@@ -2,10 +2,12 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { FontLoader } from 'three/examples/jsm/loaders/FontLoader.js';
 import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry.js';
+import { EXRLoader } from 'three/examples/jsm/loaders/EXRLoader.js';
 import { MTLLoader } from 'three/examples/jsm/loaders/MTLLoader.js';
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { isOverCube, detectCubeHover } from './modules/moduleCubeHover.js';  // Importamos el módulo
 
 // Crear el LoadingManager
 const loadingManager = new THREE.LoadingManager();
@@ -40,6 +42,24 @@ const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
+//HDRI
+const exrLoader = new EXRLoader(loadingManager);
+exrLoader.load('hdri/background-studio-wall.exr', function (texture) {
+    texture.mapping = THREE.EquirectangularReflectionMapping;
+    
+    // Establecer la textura de entorno para la escena
+    sceneOne.environment = texture;
+    sceneOne.background = texture;
+
+    // También puedes aplicarlo como un mapa de entorno en el cubo cristalino para reflejos
+    crystalSideMaterial.envMap = texture;
+    crystalSideMaterial.needsUpdate = true;
+},
+undefined,
+function (error) {
+    console.error('Error al cargar la textura EXR', error);
+});
+
 // Geometría del cubo
 const cubeGeometry = new THREE.BoxGeometry(4, 4, 4);
 // Crear un CubeCamera para las reflexiones
@@ -52,20 +72,19 @@ const cubeCamera = new THREE.CubeCamera(0.1, 10, cubeRenderTarget);
 const cubeMaterial = new THREE.MeshPhysicalMaterial({
     envMap: cubeRenderTarget.texture, 
     envMapIntensity: 1,
-    color: 0xffffff, 
+    color: 0xaaaaaa, 
     opacity: 0.1, // Transparente
     transparent: true,
     roughness: 0.05, 
-    metalness: 0.5, 
+    metalness: 0, 
     reflectivity: 0.9,
-    refractionRatio: 0.1, // Efecto de refracción
     transmission: 1, // Permitir que la luz pase a través
     clearcoat: 1, 
     clearcoatRoughness: 0,
-    thickness: 0.5,
+    thickness: -1,
     ior: 1,
     sheen: 1, // Simular efectos de dispersión de luz
-    sheenColor: new THREE.Color(0xff0000), // Efecto prismático con un color inicial
+    sheenColor: new THREE.Color(0xff00ff), // Efecto prismático con un color inicial
     side: THREE.DoubleSide // Para que las caras interiores reflejen
 });
 
@@ -77,7 +96,6 @@ const crystalSideMaterial = new THREE.MeshPhysicalMaterial({
     transmission: 0.9, // Add transparency
     thickness: -1, // Add refraction
     reflectivity: 1,
-    refractionRatio: 0.98, // Efecto de refracción
     ior: 1.3,
     sheen: 1, // Simular efectos de dispersión de luz
     sheenColor: new THREE.Color(0x0000ff), // Efecto prismático con un color inicial
@@ -106,7 +124,7 @@ fontLoader.load('fonts/roboto/Roboto_Regular.typeface.json', function (font) {
     const textGeometry = new TextGeometry('Start', {
         font: font,
         size: 0.25,   // Tamaño del texto
-        height: 0.05, // Profundidad del texto
+        depth: 0.05, // Profundidad del texto
         curveSegments: 12, // Curvatura de los bordes
         bevelEnabled: true, // Habilitar biselado
         bevelThickness: 0.02, // Grosor del biselado
@@ -123,6 +141,12 @@ fontLoader.load('fonts/roboto/Roboto_Regular.typeface.json', function (font) {
     textMesh.position.set(-0.4, -0.5, 2);  // Ajusta las coordenadas según el tamaño del cubo
     cube.add(textMesh);
 });
+
+// Crear el grupo para contener el cubo y el plano
+//const cubeSceneOneGroup = new THREE.Group();
+
+// Añadir el cubo y el plano al grupo
+//cubeSceneOneGroup.add(cube);
 
 // const wallGeometry = new THREE.BoxGeometry(10,5,1);
 // const wallTexture = new THREE.TextureLoader(loadingManager).load( 'https://i.imgur.com/onN1zfo.jpeg' );
@@ -144,6 +168,7 @@ sceneOne.add(pointLight);
 const rotationAmplitudeY = 0.15; // 15% de rotación
 const rotationAmplitudeX = 0.15; // 15% de rotación
 const rotationAmplitudeZ = 0.30; // 30% de rotación
+const rotationSpeed = 0.005;
 const rotationSpeedX = 0.0005; // Velocidad de oscilación en el eje X (más lenta)
 const rotationSpeedY = 0.0004; // Velocidad de oscilación en el eje Y (más lenta)
 const rotationSpeedZ = 0.0003; // Velocidad de oscilación en el eje Z (más lenta)
@@ -164,7 +189,7 @@ let targetScale = originalScale.clone(); // Inicialmente, el objetivo es el tama
 
 // Rotación objetivo
 const targetRotationX = (-Math.PI / 6); // Rotar 30 grados
-const targetRotationY = (Math.PI / 6); // Rotar 30 grados
+let targetRotationY = 0; // Rotar 30 grados
 const targetRotationZ = 0;
 const originalRotation = new THREE.Euler(0, 0, 0);
 const targetRotation = new THREE.Euler(targetRotationX, targetRotationY, targetRotationZ); // Rotar para que el vértice inferior izquierdo apunte al frente
@@ -277,6 +302,8 @@ let transitionProgress = 0;
 const controls = new OrbitControls(currentCamera, renderer.domElement);
 controls.enableDamping = true;  // Suaviza el movimiento
 controls.dampingFactor = 0.1;
+controls.enableZoom = false;
+controls.enableRotate = false;
 
 let cameraAnimationActive = false;
 let cameraStartPosition = new THREE.Vector3();
@@ -288,16 +315,52 @@ function easeInOut(t) {
     return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
 }
 
+function toRadians(angle) {
+    return angle * (Math.PI / 180);
+}
+
+const margin = 2; // Factor de expansion del area de deteccion;
+// Detección del hover con un margen expandido
+const detectionCube = detectCubeHover(currentCamera, cube, margin);
+
 
 // MOUSE ACTION
-let isMouseOverCube = false;
+let mouseTarget = new THREE.Vector3();
+let mouseSpeed = 0.1;
+//let mouse: { x: 0; y: 0;}; // Usamos let porque los valores se actualizarán
+let isDragging = false;
+let isOver = isOverCube;
+let previousMousePosition = { x: 0, y: 0 };
+const lerpFactor = 0.1; // Smoothing factor for interpolation
+
 
 // Evento de mousemove para detectar la posición del mouse
 function onMouseMove(event) {
     // Convertir las coordenadas del mouse a coordenadas normalizadas (-1 a 1)
     mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
     mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+    if (isDragging) {
+        // Calculate the movement in X direction only, since we want to rotate on Y-axis
+        let deltaMove = {
+            x: event.movementX || event.mozMovementX || event.webkitMovementX || 0
+        };
+
+        // Update the target rotation on Y-axis
+        targetRotationY += deltaMove.x * rotationSpeed;
+    }
 }
+
+// Detect when the mouse is pressed to start dragging
+renderer.domElement.addEventListener('mousedown', function (event) {
+    isDragging = true;
+});
+
+// Detect when the mouse is released to stop dragging
+renderer.domElement.addEventListener('mouseup', function () {
+    isDragging = false;
+});
+
 
 // Agregar el evento de mousemove
 window.addEventListener('mousemove', onMouseMove, false);
@@ -332,6 +395,11 @@ window.addEventListener('click', (event) => {
 function animate() {
     requestAnimationFrame(animate);
 
+    if(isOverCube) {
+        // Smoothly interpolate the cube's Y-axis rotation to the target rotation
+        cube.rotation.y += (targetRotationY - cube.rotation.y) * lerpFactor;
+    }
+
     // Actualizar controles
     controls.update();
 
@@ -357,25 +425,17 @@ function animate() {
         cube.scale.lerp(targetScale, 0.1);
         sphere.scale.lerp(targetScale.clone().multiplyScalar(sphereScaleFactor), 0.1);
 
-        // Rotación del cubo
-        if (factor === 1) {
-            const mousePos = new THREE.Vector3(mouse.x, mouse.y, 0).unproject(currentCamera);
-            const direction = mousePos.sub(cube.position).normalize();
-
-            const targetQuaternion = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), direction);
-            cube.quaternion.slerp(targetQuaternion, 0.1);
-        } else {
-            cube.rotation.x = rotationAmplitudeX * Math.sin(Date.now() * rotationSpeedX);
-            cube.rotation.y = rotationAmplitudeY * Math.sin(Date.now() * rotationSpeedY);
-            cube.rotation.z = rotationAmplitudeZ * Math.sin(Date.now() * rotationSpeedZ);
-
-            cube.rotation.x += (originalRotation.x - cube.rotation.x) * easingFactor;
-            cube.rotation.y += (originalRotation.y - cube.rotation.y) * easingFactor;
-            cube.rotation.z += (originalRotation.z - cube.rotation.z) * easingFactor;
-        }
-
         // Rotación de la esfera
         sphere.rotation.y += 0.01;
+
+        if(!isOverCube) {
+            // Make the object look at the mouseTarget
+            // Update target position based on mouse
+            mouseTarget.x += (mouse.x - mouseTarget.x) * mouseSpeed;
+            mouseTarget.y += (-mouse.y - mouseTarget.y) * mouseSpeed;
+            mouseTarget.z = currentCamera.position.z; // Keep the Z consistent with the camera position
+            cube.lookAt(mouseTarget);
+        }
 
         
         // Animación de la cámara hacia adelante
