@@ -4,10 +4,10 @@ import { FontLoader } from 'three/examples/jsm/loaders/FontLoader.js';
 import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry.js';
 import { EXRLoader } from 'three/examples/jsm/loaders/EXRLoader.js';
 import { MTLLoader } from 'three/examples/jsm/loaders/MTLLoader.js';
-import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
-import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { isOverCube, detectCubeHover } from './modules/moduleCubeHover.js';  // Importamos el módulo
+import { loadOBJModel, loadGLTFModel, loadFBXModel } from './modules/moduleModelLoader.js';
+import { isOverCube, detectCubeHover } from './modules/moduleCubeHover.js';
+import { adjustObjectScale } from './modules/moduleScaleControl.js';
+import { addAmbientLight, addDirectionalLight } from './modules/moduleLighting.js';
 
 // Crear el LoadingManager
 const loadingManager = new THREE.LoadingManager();
@@ -207,90 +207,6 @@ cameraTwo.lookAt(0, 0, -2);
 const directionalLightTwo = new THREE.DirectionalLight(0xffffff, 1);
 directionalLightTwo.position.set(10, 10, 10);
 sceneTwo.add(directionalLightTwo);
-
-//
-// Añadir el modelo OBJ con su MTL en la escena dos
-// const mtlLoader = new MTLLoader(loadingManager);
-// mtlLoader.load(
-//     'models/comedor/room.mtl',  // Cambia esto por la ruta correcta a tu archivo .MTL
-//     function (materials) {
-//         materials.preload(); // Preprocesar los materiales
-
-//         // Ahora, usar OBJLoader para cargar el OBJ con los materiales aplicados
-//         const objLoader = new OBJLoader(loadingManager);
-//         objLoader.setMaterials(materials); // Aplicar los materiales cargados
-//         objLoader.load(
-//             'models/comedor/room.obj',  // Cambia esto por la ruta correcta a tu archivo .OBJ
-//             function (object) {
-//                 object.position.set(0, 0, 0); // Ajustar la posición si es necesario
-//                 object.scale.set(0.5, 0.5, 0.5); // Ajusta la escala según lo necesites
-//                 sceneTwo.add(object);
-//             },
-//             function (xhr) {
-//                 console.log((xhr.loaded / xhr.total * 100) + '% cargado');
-//             },
-//             function (error) {
-//                 console.error('Error al cargar el modelo OBJ', error);
-//             }
-//         );
-//     },
-//     function (xhr) {
-//         console.log((xhr.loaded / xhr.total * 100) + '% cargado');
-//     },
-//     function (error) {
-//         console.error('Error al cargar los materiales MTL', error);
-//     }
-// );
-
-// Cargar el archivo FBX
-// const fbxLoader = new FBXLoader(loadingManager);
-// fbxLoader.load(
-//     'models/futuristic/fbx/futuristic_city.fbx',  // Cambia esto por la ruta correcta a tu archivo .FBX
-//     function (object) {
-//         object.position.set(3, 0, -8);  // Ajustar la posición si es necesario
-//         object.scale.set(0.001, 0.001, 0.001);  // Ajustar la escala según lo necesites
-//         sceneTwo.add(object);  // Añadir el modelo a la escena
-
-//         // Si el modelo tiene animaciones, puedes acceder a ellas aquí
-//         if (object.animations && object.animations.length > 0) {
-//             const mixer = new THREE.AnimationMixer(object);
-//             const action = mixer.clipAction(object.animations[0]);
-//             action.play();  // Iniciar la animación si es necesario
-//         }
-//     },
-//     function (xhr) {
-//         console.log((xhr.loaded / xhr.total * 100) + '% cargado');
-//     },
-//     function (error) {
-//         console.error('Error al cargar el modelo FBX', error);
-//     }
-// );
-
-// Crear el cargador GLTF
-const gltfLoader = new GLTFLoader();
-
-// Cargar el archivo GLTF desde la subcarpeta 'models'
-gltfLoader.load(
-    'models/sea/scene.gltf',  // Ruta a tu archivo scene.gltf
-    function (gltf) {
-        // El modelo cargado está en gltf.scene
-        const model = gltf.scene;
-        
-        // Ajustar la posición, escala o rotación si es necesario
-        model.position.set(0, 0, -3);
-        model.scale.set(0.01, 0.01, 0.01);
-
-        // Añadir el modelo a la escena
-        scene.add(model);
-    },
-    function (xhr) {
-        // Progreso de la carga
-        console.log((xhr.loaded / xhr.total * 100) + '% cargado');
-    },
-    function (error) {
-        console.error('Error al cargar el modelo GLTF', error);
-    }
-);
 
 // Variables para la transición
 let currentScene = sceneOne;  // Inicialmente mostrar sceneOne

@@ -1,5 +1,10 @@
-// moduleCubeHover.js
-
+/**
+ * moduleCubeHover.js
+ * @module moduleCubeHover
+ * @description Módulo para detectar el mouse sobre un cubo.
+ * @requires three
+ * @see {@link https://threejs.org/docs/index.html#api/en/core/Raycaster|Raycaster}
+ */
 import * as THREE from 'three';
 
 let isOverCube = false;  // Variable que queremos exportar
