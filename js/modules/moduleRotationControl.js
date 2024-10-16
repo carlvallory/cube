@@ -5,6 +5,8 @@
  * @requires three
  */
 
+import * as THREE from 'three';
+
 /**
  * Suavizar la rotación de un objeto hacia una rotación objetivo.
  * Si no se especifica un eje, suaviza la rotación en todos los ejes.
@@ -21,10 +23,18 @@ function smoothRotation(object, targetRotation, lerpFactor = 0.1, axis = false) 
         object.rotation.x += (targetRotation.x - object.rotation.x) * lerpFactor;
         object.rotation.y += (targetRotation.y - object.rotation.y) * lerpFactor;
         object.rotation.z += (targetRotation.z - object.rotation.z) * lerpFactor;
+
+        // Limitar la rotación entre -PI y PI para evitar acumulaciones excesivas
+        object.rotation.x = THREE.MathUtils.clamp(object.rotation.x, -Math.PI, Math.PI);
+        object.rotation.y = THREE.MathUtils.clamp(object.rotation.y, -Math.PI, Math.PI);
+        object.rotation.z = THREE.MathUtils.clamp(object.rotation.z, -Math.PI, Math.PI);
     } else {
         // Verifica si el eje proporcionado es válido ('x', 'y' o 'z')
         if (['x', 'y', 'z'].includes(axis)) {
             object.rotation[axis] += (targetRotation[axis] - object.rotation[axis]) * lerpFactor;
+
+            // Limitar la rotación del eje específico
+            object.rotation[axis] = THREE.MathUtils.clamp(object.rotation[axis], -Math.PI, Math.PI);
         } else {
             throw new Error(`Eje inválido: ${axis}. Debe ser 'x', 'y' o 'z'.`);
         }

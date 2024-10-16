@@ -8,6 +8,7 @@ import { loadOBJModel, loadGLTFModel, loadFBXModel } from './modules/moduleModel
 import { isOverCube, detectCubeHover } from './modules/moduleCubeHover.js';
 import { adjustObjectScale } from './modules/moduleScaleControl.js';
 import { addAmbientLight, addDirectionalLight } from './modules/moduleLighting.js';
+import { smoothRotation } from './modules/moduleRotationControl.js';
 
 // Crear el LoadingManager
 const loadingManager = new THREE.LoadingManager();
@@ -313,7 +314,8 @@ function animate() {
 
     if(isOverCube) {
         // Smoothly interpolate the cube's Y-axis rotation to the target rotation
-        smoothRotation(cube,targetRotationY, lerpFactor, 'y');
+        //cube.rotation.y += (targetRotationY - cube.rotation.y) * lerpFactor;
+        smoothRotation(cube, targetRotationY, lerpFactor, 'y');
     }
 
     // Actualizar controles
