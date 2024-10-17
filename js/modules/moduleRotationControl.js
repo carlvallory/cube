@@ -17,6 +17,7 @@ import * as THREE from 'three';
  * @throws {Error} Si el parámetro `axis` no es válido.
  */
 function smoothRotation(object, targetRotation, lerpFactor = 0.1, axis = false) {
+    console.log("Antes de smoothRotation", object.rotation)
     // Verifica si se proporciona un eje específico
     if (!axis) {
         // Suavizar la rotación en todos los ejes (X, Y, Z)
@@ -33,12 +34,26 @@ function smoothRotation(object, targetRotation, lerpFactor = 0.1, axis = false) 
         if (['x', 'y', 'z'].includes(axis)) {
             object.rotation[axis] += (targetRotation[axis] - object.rotation[axis]) * lerpFactor;
 
+            // Bloquear los otros ejes manteniendo su rotación original
+            if (axis === 'y') {
+                object.rotation.x = targetRotation.x; // Mantén X constante
+                object.rotation.z = targetRotation.z; // Mantén Z constante
+            } else if (axis === 'x') {
+                object.rotation.y = targetRotation.x; // Mantén X constante
+                object.rotation.z = targetRotation.z; // Mantén Z constante
+            } else if (axis === 'z') {
+                object.rotation.x = targetRotation.x; // Mantén X constante
+                object.rotation.y = targetRotation.y; // Mantén Y constante
+            }
+
             // Limitar la rotación del eje específico
             object.rotation[axis] = THREE.MathUtils.clamp(object.rotation[axis], -Math.PI, Math.PI);
         } else {
             throw new Error(`Eje inválido: ${axis}. Debe ser 'x', 'y' o 'z'.`);
         }
     }
+
+    console.log("Despues de smoothRotation", object.rotation)
 }
 
 export { smoothRotation };

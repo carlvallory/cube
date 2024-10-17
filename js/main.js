@@ -9,6 +9,8 @@ import { isOverCube, detectCubeHover } from './modules/moduleCubeHover.js';
 import { adjustObjectScale } from './modules/moduleScaleControl.js';
 import { addAmbientLight, addDirectionalLight } from './modules/moduleLighting.js';
 import { smoothRotation } from './modules/moduleRotationControl.js';
+import { CameraUtils } from './modules/moduleCameraUtils.js';
+import { setupVideo, loadVideo } from './modules/moduleVideo.js';
 
 // Crear el LoadingManager
 const loadingManager = new THREE.LoadingManager();
@@ -30,12 +32,16 @@ loadingManager.onError = function (url) {
     console.error('Error al cargar ' + url);
 };
 
+const viewWidth = window.innerWidth;
+const viewHeight = window.innerHeight;
+
+
 // Escena
 const sceneOne = new THREE.Scene();
 sceneOne.background = new THREE.Color(0xfefefe);  // Fondo blanco
 
 // Cámara
-const cameraOne = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+const cameraOne = new THREE.PerspectiveCamera(75, viewWidth / viewHeight, 0.1, 1000);
 cameraOne.position.z = 10;
 
 // Renderizador
@@ -195,19 +201,34 @@ const targetRotationZ = 0;
 const originalRotation = new THREE.Euler(0, 0, 0);
 const targetRotation = new THREE.Euler(targetRotationX, targetRotationY, targetRotationZ); // Rotar para que el vértice inferior izquierdo apunte al frente
 
-
+// ESCENA UNO FIN
 // ESCENA DOS
 const sceneTwo = new THREE.Scene();
 sceneTwo.background = new THREE.Color(0xfefefe);
 
 // Cámara secundaria
-const cameraTwo = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+const cameraTwo = new THREE.PerspectiveCamera(75, viewWidth / viewHeight, 0.1, 1000);
 cameraTwo.position.set(0, 0, 5);
 cameraTwo.lookAt(0, 0, -2);
 
 const directionalLightTwo = new THREE.DirectionalLight(0xffffff, 1);
 directionalLightTwo.position.set(10, 10, 10);
 sceneTwo.add(directionalLightTwo);
+
+const planeGeometry = new THREE.PlaneGeometry(2, 2);
+const planeMaterial = new THREE.MeshNormalMaterial();
+const planeTwo = new THREE.Mesh(planeGeometry, videoMaterial);
+planeTwo.position.set(0, 0, -1);
+
+sceneTwo.add(planeTwo);
+
+const planeZ = 5;
+
+const planeSize = CameraUtils.calculatePlaneSizeAtDistance(cameraTwo, planeZ, viewWidth, viewHeight);
+console.log(`Plane Width: ${planeSize.width}, Plane Height: ${planeSize.height}`);
+
+
+// ESCENA DOS FIN
 
 // Variables para la transición
 let currentScene = sceneOne;  // Inicialmente mostrar sceneOne
@@ -314,8 +335,8 @@ function animate() {
 
     if(isOverCube) {
         // Smoothly interpolate the cube's Y-axis rotation to the target rotation
-        //cube.rotation.y += (targetRotationY - cube.rotation.y) * lerpFactor;
-        smoothRotation(cube, targetRotationY, lerpFactor, 'y');
+        cube.rotation.y += (targetRotationY - cube.rotation.y) * lerpFactor;
+        //smoothRotation(cube, targetRotationY, lerpFactor, 'y');
     }
 
     // Actualizar controles
