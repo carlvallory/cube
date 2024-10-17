@@ -10,6 +10,7 @@ import { adjustObjectScale } from './modules/moduleScaleControl.js';
 import { addAmbientLight, addDirectionalLight } from './modules/moduleLighting.js';
 import { smoothRotation } from './modules/moduleRotationControl.js';
 import { CameraUtils } from './modules/moduleCameraUtils.js';
+import { loadEnvironmentTexture, createMaterials } from './modules/moduleMaterials.js';
 import { setupVideo, loadVideo } from './modules/moduleVideo.js';
 
 // Crear el LoadingManager
@@ -214,6 +215,29 @@ cameraTwo.lookAt(0, 0, -2);
 const directionalLightTwo = new THREE.DirectionalLight(0xffffff, 1);
 directionalLightTwo.position.set(10, 10, 10);
 sceneTwo.add(directionalLightTwo);
+
+// Cargar texturas y crear materiales
+loadEnvironmentTexture(scene, 'hdr/shot-panoramic-composition-empty-interior-2.exr').then((envTexture) => {
+    const materials = createMaterials(envTexture);
+
+    // Crear objetos 3D
+    const { cubeGroup, cubeCamera } = createObjects(materials);
+    sceneTwo.add(cubeGroup);
+
+    // Configurar video y textura de video
+    const { video, videoTexture } = setupVideo();
+    materials.videoMaterial.map = videoTexture;
+
+    // Configurar controles y eventos
+    setupControls({ video, cubeGroup, loadVideo, rotateCube });
+
+    // Iluminación (puedes crear otro módulo si lo deseas)
+    const ambientLight = new THREE.AmbientLight(0xfefefe, 0.5);
+    sceneTwo.add(ambientLight);
+
+    // Iniciar animación
+    animate({ sceneTwo, camera, renderer, cubeGroup, cubeCamera });
+});
 
 const planeGeometry = new THREE.PlaneGeometry(2, 2);
 const planeMaterial = new THREE.MeshNormalMaterial();
