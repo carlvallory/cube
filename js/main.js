@@ -11,7 +11,7 @@ import { addAmbientLight, addDirectionalLight } from './modules/moduleLighting.j
 import { smoothRotation } from './modules/moduleRotationControl.js';
 import { CameraUtils } from './modules/moduleCameraUtils.js';
 import { loadEnvironmentTexture, createMaterials } from './modules/moduleMaterials.js';
-import { setupVideo, loadVideo } from './modules/moduleVideo.js';
+import { createVideoElement, createVideoMaterial, loadVideo } from './modules/moduleVideo.js';
 
 // Crear el LoadingManager
 const loadingManager = new THREE.LoadingManager();
@@ -216,8 +216,11 @@ const directionalLightTwo = new THREE.DirectionalLight(0xffffff, 1);
 directionalLightTwo.position.set(10, 10, 10);
 sceneTwo.add(directionalLightTwo);
 
+const videos = ['videos/small.mp4', 'videos/small2.mp4', 'videos/small3.mp4'];
+let currentVideoIndex = 0;
+
 // Cargar texturas y crear materiales
-loadEnvironmentTexture(scene, 'hdr/shot-panoramic-composition-empty-interior-2.exr').then((envTexture) => {
+loadEnvironmentTexture(sceneTwo, 'hdr/shot-panoramic-composition-empty-interior-2.exr').then((envTexture) => {
     const materials = createMaterials(envTexture);
 
     // Crear objetos 3D
@@ -225,7 +228,7 @@ loadEnvironmentTexture(scene, 'hdr/shot-panoramic-composition-empty-interior-2.e
     sceneTwo.add(cubeGroup);
 
     // Configurar video y textura de video
-    const { video, videoTexture } = setupVideo();
+    const video = createVideoElement(videos[currentVideoIndex]);
     materials.videoMaterial.map = videoTexture;
 
     // Configurar controles y eventos
